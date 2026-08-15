@@ -6,7 +6,11 @@ authors = [{name =  "DjellalAbdou", email = "ahmed.a.djellal@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-  "fastapi (==0.141.1)"
+  "fastapi (==0.141.1)",
+  "uvicorn[standard] (>=0.52.3,<1.0.0)",
+  "httpx (>=0.28.1,<1.0.0)",
+  "pydantic (>=2.13.4,<3.0.0)",
+  "pydantic-settings (>=2.15.0,<3.0.0)",
 ]
 
 [tool.poetry.group.dev.dependencies]
