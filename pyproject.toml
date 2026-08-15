@@ -1,21 +1,18 @@
-[tool.poetry]
+[project]
 name = "payment-gateway-api"
 version = "0.1.0"
-description = "Payment Gateway API"
-authors = ["Author <author@example.com>"]
+description = "Payment Gateway API test by DjellalAbdou"
+authors = [{name =  "DjellalAbdou", email = "ahmed.a.djellal@gmail.com"}]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.8"
-uvicorn = "^0.17.6"
-gunicorn = "^20.1.0"
-fastapi = "^0.103.2"
+requires-python = ">=3.13"
+dependencies = [
+  "fastapi (==0.141.1)"
+]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^6.2.4"
-requests = "^2.31.0"
-httpx = "^0.25.0"
+pytest = "^9.1.1"
+requests = "^2.34.2"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
