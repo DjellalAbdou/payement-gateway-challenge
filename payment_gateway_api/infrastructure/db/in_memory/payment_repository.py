@@ -7,6 +7,7 @@ from payment_gateway_api.domain.models.payment import Payment
 class InMemoryPaymentRepository:
     def __init__(self) -> None:
         self._payments: dict[UUID, Payment] = {}
+        # We try to mimick the work of a transaction using a lock to avoid concurrent read/writes that will take different results
         self._lock = asyncio.Lock()
 
     async def add(self, payment: Payment) -> None:

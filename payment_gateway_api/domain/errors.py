@@ -13,6 +13,8 @@ class AcquiringBankError(PaymentGatewayError):
     Never raised directly; one of the subclasses below always applies.
     """
 
+    definitely_not_processed = False
+
 
 class AcquiringBankTimeoutError(AcquiringBankError):
     """The request was delivered but no answer arrived in time.

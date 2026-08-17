@@ -5,11 +5,9 @@ from fastapi.security import APIKeyHeader
 
 from payment_gateway_api.api.services.payment_service import PaymentService
 from payment_gateway_api.config import Settings, get_settings
+from payment_gateway_api.domain.protocols.acquiring_bank import AcquiringBank
 from payment_gateway_api.domain.protocols.idempotency_store import IdempotencyStore
 from payment_gateway_api.domain.protocols.payment_repository import PaymentRepository
-from payment_gateway_api.infrastructure.clients.acquiring_bank import (
-    AcquiringBankClient,
-)
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
@@ -29,22 +27,22 @@ def get_current_merchant(
     return merchant_id
 
 
-def get_payment_repository(request: Request):
+def get_payment_repository(request: Request) -> PaymentRepository:
     return request.app.state.payment_repository
 
 
-def get_idempotency_store(request: Request):
+def get_idempotency_store(request: Request) -> IdempotencyStore:
     return request.app.state.idempotency_store
 
 
-def get_acquiring_bank(request: Request):
+def get_acquiring_bank(request: Request) -> AcquiringBank:
     return request.app.state.acquiring_bank
 
 
 def get_payment_service(
     repository: Annotated[PaymentRepository, Depends(get_payment_repository)],
     idempotency_store: Annotated[IdempotencyStore, Depends(get_idempotency_store)],
-    bank_client: Annotated[AcquiringBankClient, Depends(get_acquiring_bank)],
+    bank_client: Annotated[AcquiringBank, Depends(get_acquiring_bank)],
 ) -> PaymentService:
     return PaymentService(
         repository=repository,

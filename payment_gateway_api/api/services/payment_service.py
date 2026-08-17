@@ -7,17 +7,16 @@ from uuid import UUID, uuid4
 from payment_gateway_api.api.schemas.payment_schema import ProcessPaymentCommand
 from payment_gateway_api.config import get_settings
 from payment_gateway_api.domain.errors import (
+    AcquiringBankError,
     IdempotencyConflictError,
     PaymentNotFoundError,
 )
 from payment_gateway_api.domain.models.payment import Payment, PaymentStatus
+from payment_gateway_api.domain.protocols.acquiring_bank import AcquiringBank
 from payment_gateway_api.domain.protocols.idempotency_store import (
     IdempotencyStore,
 )
 from payment_gateway_api.domain.protocols.payment_repository import PaymentRepository
-from payment_gateway_api.infrastructure.clients.acquiring_bank import (
-    AcquiringBankClient,
-)
 from payment_gateway_api.infrastructure.clients.models import AuthorizationRequest
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ class PaymentService:
         self,
         repository: PaymentRepository,
         idempotency_store: IdempotencyStore,
-        bank_client: AcquiringBankClient,
+        bank_client: AcquiringBank,
     ) -> None:
         self._repository = repository
         self._idempotency_store = idempotency_store
@@ -59,8 +58,14 @@ class PaymentService:
 
         try:
             res = await self._bank_client.authorize(authorization_request)
-        except Exception:
-            if key:
+        except Exception as exc:
+            if (
+                key
+                and isinstance(exc, AcquiringBankError)
+                and exc.definitely_not_processed
+            ):
+                # if we are not sure that the bank processed the request or not, we dont remove it from the store
+                # so that the same request wont be processed until a ttl or a reconsiliation process
                 await self._idempotency_store.release(command.merchant_id, key)
 
             raise
