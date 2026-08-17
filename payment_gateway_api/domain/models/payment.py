@@ -20,3 +20,4 @@ class Payment:
     currency: str
     amount: int
     created_at: datetime
+    authorization_code: str | None = None

@@ -15,8 +15,41 @@ dependencies = [
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
-requests = "^2.34.2"
+respx = "^0.23.1"
+pytest-asyncio = "^1.4.0"
+time-machine="^3.4.0"
+ruff = "^0.16.3"
+hypothesis = "^6.165.10"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error",
+    # Starlette's TestClient warns that it prefers httpx 2.x, which FastAPI does
+    # not yet depend on. Nothing for us to act on until FastAPI moves.
+    "ignore:Using .httpx. with .starlette.testclient. is deprecated:",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # comprehensions
+    "RUF", # ruff-specific
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]

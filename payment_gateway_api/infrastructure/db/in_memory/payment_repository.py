@@ -16,7 +16,7 @@ class InMemoryPaymentRepository:
 
     async def get(self, payment_id: UUID, merchant_id: str) -> Payment | None:
         async with self._lock:
-            payment = self._payments[payment_id]
+            payment = self._payments.get(payment_id)
             # we shouldnt return the payments just by UUID
             # because we didnt check about the merchant id
             if payment and payment.merchant_id == merchant_id:

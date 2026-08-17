@@ -9,10 +9,9 @@ class IdempotencyRecord:
     payment_id: UUID | None = None
 
 
-@dataclass(frozen=True, kw_only=True)
 class IdempotencyStore(Protocol):
     async def reserve(
-        self, merchant_id: str, key: str, request_finderprint: str
+        self, merchant_id: str, key: str, request_fingerprint: str
     ) -> IdempotencyRecord | None: ...
 
     async def release(self, merchant_id: str, key: str) -> None: ...

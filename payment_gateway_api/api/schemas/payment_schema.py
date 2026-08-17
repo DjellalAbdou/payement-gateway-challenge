@@ -14,11 +14,11 @@ MAX_EXPIRY_YEAR = 2100
 class PaymentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    card_number: str = Field(min_length=14, max_length=19, pattern=r"^\d+$")
+    card_number: str = Field(min_length=14, max_length=19, pattern=r"^[0-9]+$")
     expiry_month: int = Field(ge=1, le=12)
     expiry_year: int = Field(ge=MIN_EXPIRY_YEAR, le=MAX_EXPIRY_YEAR)
     currency: str = Field(min_length=3, max_length=3)
-    cvv: str = Field(min_length=3, max_length=4, pattern=r"^\d+$")
+    cvv: str = Field(min_length=3, max_length=4, pattern=r"^[0-9]+$")
     amount: int
 
     @field_validator("currency")
