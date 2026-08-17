@@ -13,6 +13,7 @@ from payment_gateway_api.domain.errors import (
     AcquiringBankTimeoutError,
     AcquiringBankUnavailableError,
     IdempotencyConflictError,
+    PaymentNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -117,4 +118,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _json(
             status.HTTP_409_CONFLICT,
             ErrorResponse(error="idempotency_conflict", message=str(exc)),
+        )
+
+    @app.exception_handler(PaymentNotFoundError)
+    async def handle_payment_not_found(
+        _: Request, exc: PaymentNotFoundError
+    ) -> JSONResponse:
+        return _json(
+            status.HTTP_404_NOT_FOUND,
+            ErrorResponse(error="payment_not_found", message="Payment not found"),
         )

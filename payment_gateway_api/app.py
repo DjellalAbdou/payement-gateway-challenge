@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 
 from payment_gateway_api.api.errors import register_exception_handlers
 from payment_gateway_api.api.routers import payments
@@ -54,6 +54,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(payments.router)
+
+    @app.get("/", tags=["health"], summary="Liveness probe")
+    async def ping() -> dict[str, str | int]:
+        return {"app": "payment-gateway-api", "status": status.HTTP_200_OK}
+
     return app
 
 

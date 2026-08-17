@@ -2,11 +2,14 @@ import hashlib
 import hmac
 import logging
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from payment_gateway_api.api.schemas.payment_schema import ProcessPaymentCommand
 from payment_gateway_api.config import get_settings
-from payment_gateway_api.domain.errors import IdempotencyConflictError
+from payment_gateway_api.domain.errors import (
+    IdempotencyConflictError,
+    PaymentNotFoundError,
+)
 from payment_gateway_api.domain.models.payment import Payment, PaymentStatus
 from payment_gateway_api.domain.protocols.idempotency_store import (
     IdempotencyStore,
@@ -140,3 +143,9 @@ class PaymentService:
             canonical_payload,
             hashlib.sha256,
         ).hexdigest()
+
+    async def get_payment(self, payment_id: UUID, merchant_id: str) -> Payment:
+        payment = await self._repository.get(payment_id, merchant_id)
+        if not payment:
+            raise PaymentNotFoundError(f"No payment with id {payment_id}")
+        return payment

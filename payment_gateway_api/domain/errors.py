@@ -54,3 +54,7 @@ class AcquiringBankProtocolError(AcquiringBankError):
 
 class IdempotencyConflictError(PaymentGatewayError):
     """merchant called the gateway with the same idempotency key but the content is different"""
+
+
+class PaymentNotFoundError(PaymentGatewayError):
+    """No payment with that id exists for the requesting merchant."""
