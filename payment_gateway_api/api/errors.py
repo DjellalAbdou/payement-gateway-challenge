@@ -1,10 +1,12 @@
 import logging
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from payment_gateway_api.api.schemas.payment_schema import (
     ErrorResponse,
+    FieldError,
     RejectedResponse,
 )
 from payment_gateway_api.domain.errors import (
@@ -128,3 +130,36 @@ def register_exception_handlers(app: FastAPI) -> None:
             status.HTTP_404_NOT_FOUND,
             ErrorResponse(error="payment_not_found", message="Payment not found"),
         )
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(
+        _: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        print(exc)
+        errors = [
+            FieldError(
+                field=_field_name(error["loc"]), message=_clean_message(error["msg"])
+            )
+            for error in exc.errors()
+        ]
+        return _json(status.HTTP_400_BAD_REQUEST, RejectedResponse(errors=errors))
+
+
+def _field_name(location: tuple[str | int, ...]) -> str:
+    """Turn a pydantic error location such as ``("body", "cvv")`` into ``"cvv"``."""
+    parts = [
+        str(part)
+        for part in location
+        if part not in ("body", "query", "path", "header")
+    ]
+    return ".".join(parts) or "body"
+
+
+_PYDANTIC_MESSAGE_PREFIXES = ("Value error, ", "Assertion failed, ")
+
+
+def _clean_message(message: str) -> str:
+    for prefix in _PYDANTIC_MESSAGE_PREFIXES:
+        if message.startswith(prefix):
+            return message.removeprefix(prefix)
+    return message
