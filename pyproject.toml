@@ -28,6 +28,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "integration: tests that require the bank simulator to be running (deselected by default)",
+]
+addopts = "-m 'not integration'"
 filterwarnings = [
     "error",
     # Starlette's TestClient warns that it prefers httpx 2.x, which FastAPI does
