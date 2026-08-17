@@ -37,18 +37,12 @@ def _json(
     model: ErrorResponse | RejectedResponse,
     headers: dict[str, str] | None = None,
 ) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code, content=model.model_dump(), headers=headers
-    )
+    return JSONResponse(status_code=status_code, content=model.model_dump(), headers=headers)
 
 
 def _field_name(location: tuple[str | int, ...]) -> str:
     """Turn a pydantic error location such as ``("body", "cvv")`` into ``"cvv"``."""
-    parts = [
-        str(part)
-        for part in location
-        if part not in ("body", "query", "path", "header")
-    ]
+    parts = [str(part) for part in location if part not in ("body", "query", "path", "header")]
     return ".".join(parts) or "body"
 
 
@@ -84,9 +78,7 @@ def _bank_error_response() -> JSONResponse:
 
 def register_bank_exceptions(app: FastAPI) -> None:
     @app.exception_handler(AcquiringBankTimeoutError)
-    async def handle_bank_timeout(
-        _: Request, exc: AcquiringBankTimeoutError
-    ) -> JSONResponse:
+    async def handle_bank_timeout(_: Request, exc: AcquiringBankTimeoutError) -> JSONResponse:
         logger.error("acquiring_bank.timeout", extra={"error": str(exc)})
         return _json(
             status.HTTP_504_GATEWAY_TIMEOUT,
@@ -150,35 +142,25 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(PaymentNotFoundError)
-    async def handle_payment_not_found(
-        _: Request, exc: PaymentNotFoundError
-    ) -> JSONResponse:
+    async def handle_payment_not_found(_: Request, exc: PaymentNotFoundError) -> JSONResponse:
         return _json(
             status.HTTP_404_NOT_FOUND,
             ErrorResponse(error="payment_not_found", message="Payment not found"),
         )
 
     @app.exception_handler(RequestValidationError)
-    async def handle_validation_error(
-        _: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         print(exc)
         errors = [
-            FieldError(
-                field=_field_name(error["loc"]), message=_clean_message(error["msg"])
-            )
+            FieldError(field=_field_name(error["loc"]), message=_clean_message(error["msg"]))
             for error in exc.errors()
         ]
         return _json(status.HTTP_400_BAD_REQUEST, RejectedResponse(errors=errors))
 
     @app.exception_handler(StarletteHTTPException)
-    async def handle_http_exception(
-        _: Request, exc: StarletteHTTPException
-    ) -> JSONResponse:
+    async def handle_http_exception(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = _STATUS_ERROR_CODES.get(exc.status_code, "error")
-        return _json(
-            exc.status_code, ErrorResponse(error=code, message=str(exc.detail))
-        )
+        return _json(exc.status_code, ErrorResponse(error=code, message=str(exc.detail)))
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
@@ -187,7 +169,5 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.exception("unhandled_error")
         return _json(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ErrorResponse(
-                error="internal_error", message="An unexpected error occurred"
-            ),
+            ErrorResponse(error="internal_error", message="An unexpected error occurred"),
         )

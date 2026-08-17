@@ -65,9 +65,7 @@ class TestSuccessfulCalls:
     async def test_declined_response_normalises_the_empty_code_to_none(
         self, bank: AcquiringBankClient
     ) -> None:
-        respx.post(AUTHORIZE_URL).respond(
-            200, json={"authorized": False, "authorization_code": ""}
-        )
+        respx.post(AUTHORIZE_URL).respond(200, json={"authorized": False, "authorization_code": ""})
 
         result = await bank.authorize(REQUEST)
 
@@ -90,9 +88,7 @@ class TestSuccessfulCalls:
         )
 
     @respx.mock
-    async def test_pads_a_single_digit_expiry_month(
-        self, bank: AcquiringBankClient
-    ) -> None:
+    async def test_pads_a_single_digit_expiry_month(self, bank: AcquiringBankClient) -> None:
         route = respx.post(AUTHORIZE_URL).respond(
             200, json={"authorized": True, "authorization_code": "code"}
         )
@@ -136,15 +132,11 @@ class TestFailureHandling:
         assert route.call_count == 1
 
     @respx.mock
-    async def test_recovers_when_a_retry_succeeds(
-        self, bank: AcquiringBankClient
-    ) -> None:
+    async def test_recovers_when_a_retry_succeeds(self, bank: AcquiringBankClient) -> None:
         route = respx.post(AUTHORIZE_URL)
         route.side_effect = [
             httpx.Response(503),
-            httpx.Response(
-                200, json={"authorized": True, "authorization_code": "code"}
-            ),
+            httpx.Response(200, json={"authorized": True, "authorization_code": "code"}),
         ]
 
         result = await bank.authorize(REQUEST)
@@ -153,15 +145,11 @@ class TestFailureHandling:
         assert route.call_count == 2
 
     @respx.mock
-    async def test_a_connection_failure_is_retried(
-        self, bank: AcquiringBankClient
-    ) -> None:
+    async def test_a_connection_failure_is_retried(self, bank: AcquiringBankClient) -> None:
         route = respx.post(AUTHORIZE_URL)
         route.side_effect = [
             httpx.ConnectError("refused"),
-            httpx.Response(
-                200, json={"authorized": True, "authorization_code": "code"}
-            ),
+            httpx.Response(200, json={"authorized": True, "authorization_code": "code"}),
         ]
 
         result = await bank.authorize(REQUEST)
@@ -190,9 +178,7 @@ class TestFailureHandling:
         route = respx.post(AUTHORIZE_URL)
         route.side_effect = [
             httpx.PoolTimeout("no connection available"),
-            httpx.Response(
-                200, json={"authorized": True, "authorization_code": "code"}
-            ),
+            httpx.Response(200, json={"authorized": True, "authorization_code": "code"}),
         ]
 
         result = await bank.authorize(REQUEST)
@@ -217,9 +203,7 @@ class TestFailureHandling:
     ) -> None:
         route = respx.post(AUTHORIZE_URL).respond(
             400,
-            json={
-                "error_message": "Not all required properties were sent in the request"
-            },
+            json={"error_message": "Not all required properties were sent in the request"},
         )
 
         with pytest.raises(AcquiringBankError):

@@ -5,9 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_prefix="GATEWAY_", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="GATEWAY_", extra="ignore")
 
     # -- Acquiring bank settings ---------------
     acquiring_bank_url: str = "http://localhost:8080"

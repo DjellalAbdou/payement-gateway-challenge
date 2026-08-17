@@ -1,15 +1,27 @@
-version: "3.8"
+version: '3.8'
 
 services:
   bank_simulator:
     container_name: bank_simulator
     image: bbyars/mountebank:2.8.1
     ports:
-      - "2525:2525"
-      - "8080:8080"
+      - '2525:2525'
+      - '8080:8080'
     command: --configfile /imposters/bank_simulator.ejs --allowInjection
     volumes:
       - type: bind
         source: ./imposters
         target: /imposters
-      
+
+  # Optional: run the gateway itself in a container alongside the simulator with
+  # `docker compose up`. Local development normally uses `make run` instead.
+  payment_gateway:
+    container_name: payment_gateway
+    build: .
+    ports:
+      - '8000:8000'
+    environment:
+      # Inside the compose network the simulator is reachable by service name.
+      GATEWAY_ACQUIRING_BANK_URL: http://bank_simulator:8080
+    depends_on:
+      - bank_simulator

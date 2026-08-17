@@ -55,9 +55,7 @@ class TestRepository:
 
         await asyncio.gather(*(repository.add(payment) for payment in payments))
 
-        stored = await asyncio.gather(
-            *(repository.get(p.id, MERCHANT) for p in payments)
-        )
+        stored = await asyncio.gather(*(repository.get(p.id, MERCHANT) for p in payments))
         assert stored == payments
 
 

@@ -88,9 +88,7 @@ class AcquiringBankClient:
                 "acquiring_bank.rejected_request",
                 extra={"status_code": response.status_code},
             )
-            raise AcquiringBankProtocolError(
-                f"Acquiring bank returned HTTP {response.status_code}"
-            )
+            raise AcquiringBankProtocolError(f"Acquiring bank returned HTTP {response.status_code}")
 
         try:
             body = response.json()
@@ -102,9 +100,7 @@ class AcquiringBankClient:
             ) from exc
 
         if not isinstance(authorized, bool):
-            raise AcquiringBankProtocolError(
-                "Acquiring bank returned a non-boolean 'authorized'"
-            )
+            raise AcquiringBankProtocolError("Acquiring bank returned a non-boolean 'authorized'")
 
         # The simulator sends an empty string rather than omitting the code on a
         # decline; normalise that to None.

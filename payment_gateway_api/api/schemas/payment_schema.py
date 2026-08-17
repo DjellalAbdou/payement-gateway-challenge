@@ -38,15 +38,14 @@ class PaymentRequest(BaseModel):
         max_amount = get_settings().max_amount_minor_units
         min_amount = get_settings().min_amount_minor_units
         if not (min_amount <= value <= max_amount):
-            raise ValueError(
-                f"Amount must be between {min_amount} and {max_amount} minor units"
-            )
+            raise ValueError(f"Amount must be between {min_amount} and {max_amount} minor units")
         return value
 
     @model_validator(mode="after")
     def validate_expiry_in_the_future(self) -> "PaymentRequest":
         now = datetime.now(UTC)
-        # we accept cards that expire in the current month, so we check for strictly less than the current month/year
+        # we accept cards that expire in the current month,
+        # so we check for strictly less than the current month/year
         if (self.expiry_year, self.expiry_month) < (now.year, now.month):
             raise ValueError(
                 f"Card expiry date {self.expiry_month}/{self.expiry_year} is in the past"

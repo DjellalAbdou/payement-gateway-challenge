@@ -8,9 +8,7 @@ request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 # Attributes present on every LogRecord; anything else was supplied by the caller
 # via ``extra=`` and is worth including in the JSON output.
-_STANDARD_RECORD_ATTRS = frozenset(
-    logging.LogRecord("", 0, "", 0, "", None, None).__dict__
-) | {
+_STANDARD_RECORD_ATTRS = frozenset(logging.LogRecord("", 0, "", 0, "", None, None).__dict__) | {
     "message",
     "asctime",
     "taskName",

@@ -67,5 +67,6 @@ IdempotencyKey = Annotated[
 
 CurrentMerchant = Annotated[str, Depends(get_current_merchant)]
 
-# inject the right repository and idempotency store, we can change them easily for testing or if we want to change the implementation in the future"""
+# inject the right repository and idempotency store, we can change them easily for testing
+# or if we want to change the implementation in the future
 PaymentServiceDep = Annotated[PaymentService, Depends(get_payment_service)]

@@ -59,12 +59,9 @@ class PaymentService:
         try:
             res = await self._bank_client.authorize(authorization_request)
         except Exception as exc:
-            if (
-                key
-                and isinstance(exc, AcquiringBankError)
-                and exc.definitely_not_processed
-            ):
-                # if we are not sure that the bank processed the request or not, we dont remove it from the store
+            if key and isinstance(exc, AcquiringBankError) and exc.definitely_not_processed:
+                # if we are not sure that the bank processed the request or not,
+                # we dont remove it from the store
                 # so that the same request wont be processed until a ttl or a reconsiliation process
                 await self._idempotency_store.release(command.merchant_id, key)
 
@@ -73,9 +70,7 @@ class PaymentService:
         payment = Payment(
             id=uuid4(),
             merchant_id=command.merchant_id,
-            status=PaymentStatus.AUTHORIZED
-            if res.authorized
-            else PaymentStatus.DECLINED,
+            status=PaymentStatus.AUTHORIZED if res.authorized else PaymentStatus.DECLINED,
             last_four_card_digits=authorization_request.last_four_digits,
             expiry_month=command.expiry_month,
             expiry_year=command.expiry_year,
@@ -101,9 +96,7 @@ class PaymentService:
         )
         return payment
 
-    async def _claim_idempotency_key(
-        self, command: ProcessPaymentCommand
-    ) -> Payment | None:
+    async def _claim_idempotency_key(self, command: ProcessPaymentCommand) -> Payment | None:
         fingerprint = self._generate_fingerprint(command)
         assert command.idempotency_key is not None
         record = await self._idempotency_store.reserve(

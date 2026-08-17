@@ -51,7 +51,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="Payment Gateway API",
         version="1.0.0",
-        description="A simple payment gateway API built with FastAPI that processes card payments through an acquiring bank.",
+        description=(
+            "A simple payment gateway API built with FastAPI "
+            "that processes card payments through an acquiring bank."
+        ),
         lifespan=lifespan,
     )
 
