@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from payment_gateway_api.api.schemas.payment_schema import (
     ErrorResponse,
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 # bank that is already in trouble. Only sent where a retry is actually appropriate.
 RETRY_AFTER_SECONDS = 5
 
+_STATUS_ERROR_CODES = {
+    status.HTTP_401_UNAUTHORIZED: "unauthorized",
+    status.HTTP_404_NOT_FOUND: "not_found",
+    status.HTTP_405_METHOD_NOT_ALLOWED: "method_not_allowed",
+}
+
 
 def _json(
     status_code: int,
@@ -33,6 +40,26 @@ def _json(
     return JSONResponse(
         status_code=status_code, content=model.model_dump(), headers=headers
     )
+
+
+def _field_name(location: tuple[str | int, ...]) -> str:
+    """Turn a pydantic error location such as ``("body", "cvv")`` into ``"cvv"``."""
+    parts = [
+        str(part)
+        for part in location
+        if part not in ("body", "query", "path", "header")
+    ]
+    return ".".join(parts) or "body"
+
+
+_PYDANTIC_MESSAGE_PREFIXES = ("Value error, ", "Assertion failed, ")
+
+
+def _clean_message(message: str) -> str:
+    for prefix in _PYDANTIC_MESSAGE_PREFIXES:
+        if message.startswith(prefix):
+            return message.removeprefix(prefix)
+    return message
 
 
 def _bank_error_response() -> JSONResponse:
@@ -144,22 +171,23 @@ def register_exception_handlers(app: FastAPI) -> None:
         ]
         return _json(status.HTTP_400_BAD_REQUEST, RejectedResponse(errors=errors))
 
+    @app.exception_handler(StarletteHTTPException)
+    async def handle_http_exception(
+        _: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        code = _STATUS_ERROR_CODES.get(exc.status_code, "error")
+        return _json(
+            exc.status_code, ErrorResponse(error=code, message=str(exc.detail))
+        )
 
-def _field_name(location: tuple[str | int, ...]) -> str:
-    """Turn a pydantic error location such as ``("body", "cvv")`` into ``"cvv"``."""
-    parts = [
-        str(part)
-        for part in location
-        if part not in ("body", "query", "path", "header")
-    ]
-    return ".".join(parts) or "body"
-
-
-_PYDANTIC_MESSAGE_PREFIXES = ("Value error, ", "Assertion failed, ")
-
-
-def _clean_message(message: str) -> str:
-    for prefix in _PYDANTIC_MESSAGE_PREFIXES:
-        if message.startswith(prefix):
-            return message.removeprefix(prefix)
-    return message
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+        # The traceback goes to the logs; the merchant gets nothing that could
+        # disclose internal state.
+        logger.exception("unhandled_error")
+        return _json(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ErrorResponse(
+                error="internal_error", message="An unexpected error occurred"
+            ),
+        )

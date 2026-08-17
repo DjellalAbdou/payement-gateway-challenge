@@ -35,6 +35,10 @@ class Settings(BaseSettings):
         "super_secret_key"  # used for HMAC fingerprinting of idempotency keys
     )
 
+    # -- logger ------------
+    log_level: str = "INFO"
+    json_logs: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:

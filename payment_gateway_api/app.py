@@ -5,6 +5,7 @@ import httpx
 from fastapi import FastAPI, status
 
 from payment_gateway_api.api.errors import register_exception_handlers
+from payment_gateway_api.api.middlewares.request_context import RequestContextMiddleware
 from payment_gateway_api.api.routers import payments
 from payment_gateway_api.config import Settings, get_settings
 from payment_gateway_api.infrastructure.clients.acquiring_bank import (
@@ -16,10 +17,12 @@ from payment_gateway_api.infrastructure.db.in_memory.idempotency_store import (
 from payment_gateway_api.infrastructure.db.in_memory.payment_repository import (
     InMemoryPaymentRepository,
 )
+from payment_gateway_api.logger_config import configure_logging
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    configure_logging(level=settings.log_level, json_logs=settings.json_logs)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -52,6 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(payments.router)
 
