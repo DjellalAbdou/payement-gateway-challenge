@@ -4,16 +4,20 @@ import random
 
 import httpx
 
-from payment_gateway_api.domain.errors import AcquiringBankError
-from payment_gateway_api.domain.models import (
+from payment_gateway_api.domain.errors import (
+    AcquiringBankProtocolError,
+    AcquiringBankTimeoutError,
+    AcquiringBankUnavailableError,
+)
+from payment_gateway_api.infrastructure.clients.models import (
     AuthorizationRequest,
     AuthorizationResult,
 )
 
 logger = logging.getLogger(__name__)
 
-_AUTHORIZE_PATH = "/payements"
-_RETRYABLE_EXCEPTIONS = (httpx.ConnectError, httpx.ConnectTimeout)
+_AUTHORIZE_PATH = "/payments"
+_RETRYABLE_EXCEPTIONS = (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)
 _RETRYABLE_STATUS_CODES = frozenset({503})
 
 
@@ -38,6 +42,7 @@ class AcquiringBankClient:
             "cvv": request.cvv,
         }
 
+        last_error = ""
         for attempt in range(1, self._max_attempts + 1):
             try:
                 response = await self._client.post(_AUTHORIZE_PATH, json=payload)
@@ -47,6 +52,15 @@ class AcquiringBankClient:
                     "acquiring_bank.connection_failed",
                     extra={"attempt": attempt, "error": last_error},
                 )
+            # request reached the bank and maybe processed
+            except httpx.TimeoutException as exc:
+                logger.error(
+                    "acquiring_bank.timed_out",
+                    extra={"attempt": attempt, "error": str(exc)},
+                )
+                raise AcquiringBankTimeoutError(
+                    "The acquiring bank did not respond in time; the outcome is unknown"
+                ) from exc
             else:
                 if response.status_code not in _RETRYABLE_STATUS_CODES:
                     return self._parse(response)
@@ -59,7 +73,7 @@ class AcquiringBankClient:
             if attempt < self._max_attempts:
                 await asyncio.sleep(self._backoff_delay(attempt))
 
-        raise AcquiringBankError(
+        raise AcquiringBankUnavailableError(
             f"Failed to authorize payment after {self._max_attempts} attempts: {last_error}"
         )
 
@@ -74,7 +88,7 @@ class AcquiringBankClient:
                 "acquiring_bank.rejected_request",
                 extra={"status_code": response.status_code},
             )
-            raise AcquiringBankError(
+            raise AcquiringBankProtocolError(
                 f"Acquiring bank returned HTTP {response.status_code}"
             )
 
@@ -83,12 +97,12 @@ class AcquiringBankClient:
             authorized = body["authorized"]
         except (ValueError, KeyError, TypeError) as exc:
             logger.error("acquiring_bank.unparsable_response")
-            raise AcquiringBankError(
+            raise AcquiringBankProtocolError(
                 "Acquiring bank returned an unreadable response"
             ) from exc
 
         if not isinstance(authorized, bool):
-            raise AcquiringBankError(
+            raise AcquiringBankProtocolError(
                 "Acquiring bank returned a non-boolean 'authorized'"
             )
 
