@@ -150,7 +150,6 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-        print(exc)
         errors = [
             FieldError(field=_field_name(error["loc"]), message=_clean_message(error["msg"]))
             for error in exc.errors()
